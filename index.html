@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Multimedia App Preview</title>
+  <style>
+    /* 🌐 بنیادی CSS اسٹائلنگ */
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f4f6f9;
+      color: #333;
+    }
+
+    /* 🔝 اوپر والا Navbar */
+    nav {
+      background: #0077b6;
+      padding: 15px;
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    nav h1 {
+      margin: 0;
+      font-size: 20px;
+    }
+    nav ul {
+      list-style: none;
+      display: flex;
+      gap: 15px;
+    }
+    nav ul li {
+      cursor: pointer;
+    }
+    nav ul li:hover {
+      text-decoration: underline;
+    }
+
+    /* 📦 فیچر کارڈز */
+    .container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      padding: 20px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .card h2 {
+      margin-top: 0;
+      color: #0077b6;
+    }
+
+    textarea, input, select, button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+    }
+
+    button {
+      background: #0077b6;
+      color: white;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    button:hover {
+      background: #023e8a;
+    }
+
+    canvas {
+      width: 100%;
+      height: 200px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      margin-top: 10px;
+    }
+
+    /* ⬇️ فوٹر */
+    footer {
+      text-align: center;
+      background: #0077b6;
+      color: white;
+      padding: 15px;
+      margin-top: 20px;
+    }
+    footer select {
+      width: auto;
+      margin-left: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 🔝 اوپر Navigation Menu -->
+  <nav>
+    <h1>🎬 Multimedia App</h1>
+    <ul>
+      <li>Home</li>
+      <li>Image</li>
+      <li>Video</li>
+      <li>Text to Speech</li>
+      <li>Settings</li>
+    </ul>
+  </nav>
+
+  <!-- 📦 تمام فیچر کارڈز -->
+  <div class="container">
+
+    <!-- 🖼️ Image Creation Section -->
+    <div class="card">
+      <h2>🖼️ Image Creation</h2>
+      <!-- یہاں آپ اپنی امیج اپلوڈ کر سکتے ہیں -->
+      <input type="file" accept="image/*">
+      <!-- یا Canvas پر ڈرائنگ کر سکتے ہیں -->
+      <canvas id="drawCanvas"></canvas>
+      <button onclick="saveImage()">💾 Save Image</button>
+    </div>
+
+    <!-- 🎤 Text to Speech Section -->
+    <div class="card">
+      <h2>🎤 Text to Speech</h2>
+      <!-- یہاں آپ کوئی بھی Text لکھ سکتے ہیں -->
+      <textarea id="ttsText" placeholder="اپنا ٹیکسٹ یہاں لکھیں..."></textarea>
+      <select id="voiceSelect"></select>
+      <button onclick="speakText()">🔊 Speak</button>
+    </div>
+
+    <!-- 🎥 Video Creation Section -->
+    <div class="card">
+      <h2>🎥 Video Creation</h2>
+      <p>Canvas سے ویڈیو ریکارڈ کریں (Microphone optional)</p>
+      <button onclick="startRecording()">⏺ Start Recording</button>
+      <button onclick="stopRecording()">⏹ Stop & Save</button>
+      <video id="previewVideo" controls style="width:100%; margin-top:10px;"></video>
+    </div>
+
+    <!-- 🔑 Settings Section -->
+    <div class="card">
+      <h2>🔑 Settings</h2>
+      <!-- یہاں آپ Security کے لیے پاسورڈ سیٹ کر سکتے ہیں -->
+      <input type="password" id="passwordInput" placeholder="نیا پاسورڈ لکھیں">
+      <button onclick="savePassword()">💾 Save Password</button>
+    </div>
+
+  </div>
+
+  <!-- ⬇️ فوٹر -->
+  <footer>
+    🌐 Select Language:
+    <select>
+      <option>اردو</option>
+      <option>English</option>
+      <option>हिन्दी</option>
+      <option>العربية</option>
+    </select>
+  </footer>
+
+  <!-- ⚙️ JavaScript Functionality -->
+  <script>
+    // 🖊️ Canvas Drawing
+    const canvas = document.getElementById("drawCanvas");
+    const ctx = canvas.getContext("2d");
+    let drawing = false;
+
+    canvas.addEventListener("mousedown", () => drawing = true);
+    canvas.addEventListener("mouseup", () => drawing = false);
+    canvas.addEventListener("mousemove", draw);
+
+    function draw(event) {
+      if (!drawing) return;
+      ctx.fillStyle = "black"; // یہاں آپ رنگ بھی بدل سکتے ہیں
+      ctx.beginPath();
+      ctx.arc(event.offsetX, event.offsetY, 2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function saveImage() {
+      const link = document.createElement("a");
+      link.download = "drawing.png";
+      link.href = canvas.toDataURL();
+      link.click();
+    }
+
+    // 🎤 Text to Speech
+    const voiceSelect = document.getElementById("voiceSelect");
+    let voices = [];
+
+    function loadVoices() {
+      voices = speechSynthesis.getVoices();
+      voiceSelect.innerHTML = "";
+      voices.forEach((voice, i) => {
+        const option = document.createElement("option");
+        option.value = i;
+        option.textContent = voice.name + " (" + voice.lang + ")";
+        voiceSelect.appendChild(option);
+      });
+    }
+    speechSynthesis.onvoiceschanged = loadVoices;
+
+    function speakText() {
+      const text = document.getElementById("ttsText").value;
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.voice = voices[voiceSelect.value];
+      speechSynthesis.speak(utterance);
+    }
+
+    // 🎥 Video Recording
+    let mediaRecorder;
+    let recordedChunks = [];
+
+    async function startRecording() {
+      const stream = canvas.captureStream(30);
+      const audio = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const combinedStream = new MediaStream([...stream.getTracks(), ...audio.getTracks()]);
+      mediaRecorder = new MediaRecorder(combinedStream);
+      mediaRecorder.ondataavailable = e => recordedChunks.push(e.data);
+      mediaRecorder.start();
+    }
+
+    function stopRecording() {
+      mediaRecorder.stop();
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(recordedChunks, { type: "video/webm" });
+        const url = URL.createObjectURL(blob);
+        document.getElementById("previewVideo").src = url;
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "recording.webm";
+        link.click();
+        recordedChunks = [];
+      };
+    }
+
+    // 🔑 Settings (Password Save in LocalStorage)
+    function savePassword() {
+      const pwd = document.getElementById("passwordInput").value;
+      localStorage.setItem("appPassword", pwd);
+      alert("Password saved locally!");
+    }
+  </script>
+
+</body>
+    </html>
